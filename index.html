@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모리사회연구소 - 사회 기록 아카이브</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700;800&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #fcfbf9; color: #2d3436; display: flex; flex-direction: column; min-height: 100vh; }
+        h1, h2, h3, .font-serif { font-family: 'Nanum Myeongjo', serif; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #a7f3d0; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #276749; }
+        
+        .ql-container.ql-snow { min-height: 400px; font-size: 16px; background: white; border-radius: 0 0 8px 8px; border-color: #e2e8f0; }
+        .ql-toolbar.ql-snow { background: #f8fafc; border-radius: 8px 8px 0 0; border-color: #e2e8f0; }
+        
+        .post-content ul, .ql-editor ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .post-content ol, .ql-editor ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
+        .post-content h1, .post-content h2 { font-family: 'Nanum Myeongjo', serif; font-weight: bold; margin-top: 1.5em; margin-bottom: 0.5em; }
+        .post-content p { margin-bottom: 1em; line-height: 1.8; }
+        .post-content blockquote { border-left: 4px solid #2f855a; padding-left: 1rem; color: #718096; font-style: italic; background: #f0fdf4; padding: 15px; margin: 15px 0; }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .modal-bg { background-color: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px); }
+    </style>
+</head>
+<body>
+
+    <!-- 상단 헤더 -->
+    <header class="bg-white shadow-sm py-5 border-t-8 border-[#2f855a] sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 flex justify-between items-center">
+            <h1 class="text-3xl font-serif font-extrabold cursor-pointer text-[#2d3436] tracking-tight hover:text-[#2f855a] transition" onclick="showSection('home')">모리사회연구소</h1>
+            <button onclick="openPasswordModal('writeAccess')" class="bg-[#2d3436] text-white px-5 py-2.5 rounded-md shadow hover:bg-[#2f855a] transition font-bold flex items-center gap-2">
+                <i class="fa-solid fa-feather-pointed"></i> 새 기록 작성
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-5xl mx-auto w-full px-4 py-8 flex flex-col md:flex-row gap-8">
+        
+        <!-- 사이드바 -->
+        <aside class="md:w-64 shrink-0">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto">
+                
+                <div class="mb-5 pb-5 border-b-2 border-gray-100">
+                    <h3 class="font-serif font-extrabold text-base mb-3 text-[#2f855a]"><i class="fa-solid fa-magnifying-glass mr-2"></i>기록 검색</h3>
+                    <div class="relative">
+                        <input type="text" id="search-input" onkeyup="searchPosts()" placeholder="검색어를 입력하세요" class="w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#2f855a] focus:ring-1 focus:ring-[#2f855a] transition text-sm">
+                        <i class="fa-solid fa-magnifying-glass absolute right-3 top-2.5 text-gray-400 text-sm"></i>
+                    </div>
+                </div>
+
+                <h3 class="font-serif font-extrabold text-base mb-3 text-[#2f855a]"><i class="fa-solid fa-book-open mr-2"></i>분류 목록</h3>
+                <ul class="space-y-1 text-sm">
+                    <li><button onclick="filterCategory('전체')" class="cat-btn w-full text-left px-3 py-2.5 rounded-lg bg-[#2f855a] text-white font-bold transition">전체 기록</button></li>
+                    <li><button onclick="filterCategory('인권/정의')" class="cat-btn w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 transition">인권/정의</button></li>
+                    <li><button onclick="filterCategory('경제/시장')" class="cat-btn w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 transition">경제/시장</button></li>
+                    <li><button onclick="filterCategory('사회/문화')" class="cat-btn w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 transition">사회/문화</button></li>
+                    <li><button onclick="filterCategory('환경/지리')" class="cat-btn w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 transition">환경/지리</button></li>
+                    <li><button onclick="filterCategory('미분류')" class="cat-btn w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 transition">기타/미분류</button></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- 메인 콘텐츠 -->
+        <div class="flex-grow min-w-0">
+            
+            <section id="home-section" class="block">
+                <div class="mb-6 flex justify-between items-end border-b border-gray-200 pb-4">
+                    <h2 class="text-2xl font-serif font-bold text-[#2d3436]" id="category-title">전체 기록</h2>
+                    <span class="text-sm text-gray-500 bg-white px-3 py-1 border rounded-full shadow-sm">총 <span id="post-count" class="font-bold text-[#2f855a]">0</span>건</span>
+                </div>
+                
+                <div id="posts-container" class="space-y-6">
+                    <div class="text-center py-20 text-gray-400">
+                        <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3"></i>
+                        <p>사회 기록을 불러오는 중입니다...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="detail-section" class="hidden bg-white p-8 md:p-12 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center mb-8 border-b border-gray-100 pb-6">
+                    <button onclick="showSection('home')" class="text-gray-500 hover:text-[#2f855a] transition font-bold flex items-center">
+                        <i class="fa-solid fa-arrow-left mr-2"></i> 목록으로 돌아가기
+                    </button>
+                    <div class="flex gap-4">
+                        <button onclick="openPasswordModal('edit')" class="text-gray-400 hover:text-blue-500 transition text-sm font-bold flex items-center">
+                            <i class="fa-solid fa-pen-to-square mr-1"></i> 기록 수정
+                        </button>
+                        <button onclick="openPasswordModal('delete')" class="text-gray-400 hover:text-red-500 transition text-sm font-bold flex items-center">
+                            <i class="fa-solid fa-trash-can mr-1"></i> 영구 삭제
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-10 text-center">
+                    <div class="flex justify-center items-center gap-3 mb-4">
+                        <span id="detail-category" class="bg-[#2d3436] text-white text-sm px-3 py-1 rounded-full font-bold tracking-wider shadow-sm"></span>
+                        <time id="detail-date" class="text-sm font-bold text-[#2f855a]"></time>
+                    </div>
+                    <h2 id="detail-title" class="text-3xl md:text-4xl font-serif font-extrabold text-[#2d3436] leading-tight"></h2>
+                </div>
+                <div id="detail-content" class="post-content text-gray-700 text-lg"></div>
+            </section>
+
+            <section id="write-section" class="hidden bg-white p-8 md:p-10 rounded-xl shadow-sm border border-gray-100">
+                <h2 id="write-header-title" class="text-2xl font-serif font-bold mb-8 text-[#2d3436] border-b border-gray-100 pb-4">새로운 사회 기록 작성</h2>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block font-bold text-gray-700 mb-2 text-sm">기록 제목</label>
+                        <input type="text" id="post-title" placeholder="제목을 입력하세요" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#2f855a] transition">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-2 text-sm">일자</label>
+                            <input type="date" id="post-date" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#2f855a] transition">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-gray-700 mb-2 text-sm">분류</label>
+                            <select id="post-category" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#2f855a] transition">
+                                <option value="인권/정의">인권/정의</option>
+                                <option value="경제/시장">경제/시장</option>
+                                <option value="사회/문화">사회/문화</option>
+                                <option value="환경/지리">환경/지리</option>
+                                <option value="미분류">기타/미분류</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-bold text-gray-700 mb-2 text-sm">기록 내용</label>
+                        <div id="editor-container"></div>
+                    </div>
+                    
+                    <div class="mt-8 pt-6 border-t border-gray-100 flex justify-end gap-3">
+                        <button type="button" onclick="showSection('home')" class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition">취소</button>
+                        <button type="button" onclick="executeSavePost()" id="save-btn" class="px-8 py-3 bg-[#2d3436] text-white rounded-lg font-bold hover:bg-[#2f855a] transition shadow-md flex items-center gap-2">
+                            <i class="fa-solid fa-vault"></i> 기록 보존하기
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+        </div>
+    </main>
+
+    <footer class="bg-[#242b2e] text-gray-400 py-10 text-center text-sm border-t-4 border-[#2f855a] mt-auto">
+        <div class="max-w-4xl mx-auto px-4">
+            <h2 class="font-serif text-2xl mb-4 text-[#f0fdf4] tracking-widest">모리사회연구소</h2>
+            <p class="mb-6 opacity-70 italic font-serif text-lg">"인간은 사회적 동물이다." - 아리스토텔레스</p>
+            <p class="opacity-50 tracking-wide">© 2026 Mori Society Institute. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <div id="password-modal" class="fixed inset-0 modal-bg z-50 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl border-2 border-[#a7f3d0] w-11/12 max-w-sm text-center transform transition-all">
+            <div class="bg-[#f0fdf4] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                <i class="fa-solid fa-lock text-2xl text-[#276749]"></i>
+            </div>
+            <h3 class="text-2xl font-serif font-extrabold mb-2 text-[#242b2e]">권한 인증</h3>
+            <p id="password-desc" class="text-sm text-gray-500 mb-6">작업을 계속하려면 암호를 입력하세요.</p>
+            
+            <input type="password" id="modal-pw" placeholder="암호 입력" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-center mb-5 tracking-widest text-lg focus:outline-none focus:border-[#276749]" onkeypress="if(event.key==='Enter' || event.keyCode===13) verifyPassword()">
+            
+            <div class="flex gap-3">
+                <button type="button" onclick="closePasswordModal()" class="w-1/2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-bold hover:bg-gray-200 transition">취소</button>
+                <button type="button" onclick="verifyPassword()" class="w-1/2 px-4 py-3 bg-[#276749] text-white rounded-lg font-bold shadow-md hover:bg-opacity-90 transition">확인</button>
+            </div>
+            <p id="pw-error" class="text-red-500 text-sm mt-4 hidden font-bold"><i class="fa-solid fa-circle-exclamation mr-1"></i>암호가 일치하지 않습니다.</p>
+        </div>
+    </div>
+
+    <div id="message-modal" class="fixed inset-0 modal-bg z-[60] flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-11/12 text-center border-t-4 border-[#276749]">
+            <p id="message-text" class="text-lg font-bold text-gray-800 mb-6 leading-relaxed"></p>
+            <button onclick="closeMessage()" class="px-8 py-3 bg-[#2d3436] text-white rounded-lg font-bold shadow-md w-full hover:bg-[#2f855a] transition">확인</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        var allPosts = [];
+        var currentCategory = '전체';
+        var currentSearchKeyword = '';
+        var currentViewingPostId = null;
+        var currentEditingPostId = null;
+        var pendingAction = null; 
+        var db = null;
+
+        var quill = new Quill('#editor-container', {
+            theme: 'snow',
+            placeholder: '사회적 현상과 연구 내용을 상세히 기록하세요...',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['blockquote', 'clean']
+                ]
+            }
+        });
+
+        function setTodayDate() {
+            var today = new Date();
+            var yyyy = today.getFullYear();
+            var mm = today.getMonth() + 1;
+            var dd = today.getDate();
+            if(mm < 10) { mm = '0' + mm; }
+            if(dd < 10) { dd = '0' + dd; }
+            document.getElementById('post-date').value = yyyy + '-' + mm + '-' + dd;
+        }
+
+        function showMessage(msg) {
+            document.getElementById('message-text').innerText = msg;
+            document.getElementById('message-modal').classList.remove('hidden');
+        }
+        function closeMessage() {
+            document.getElementById('message-modal').classList.add('hidden');
+        }
+
+        try {
+            var firebaseConfig = {
+                apiKey: "AIzaSyCK1CXpn1BZsnq33yF-x5uZpGLcHZ6I2HY",
+                authDomain: "mori-history0225.firebaseapp.com",
+                projectId: "mori-history0225",
+                storageBucket: "mori-history0225.firebasestorage.app",
+                messagingSenderId: "714075348816",
+                appId: "1:714075348816:web:dcc5535626b9998b6ad655"
+            };
+            
+            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+
+            db.collection('mori_society_posts').onSnapshot(function(snapshot) {
+                allPosts = [];
+                snapshot.forEach(function(doc) { 
+                    var data = doc.data();
+                    data.id = doc.id; 
+                    allPosts.push(data); 
+                });
+                allPosts.sort(function(a, b) { return b.time - a.time; });
+                
+                if(!document.getElementById('home-section').classList.contains('hidden')) {
+                    renderPosts();
+                } else if(!document.getElementById('detail-section').classList.contains('hidden') && currentViewingPostId) {
+                    viewPost(currentViewingPostId);
+                }
+            });
+        } catch (e) { console.error("DB Error:", e); }
+
+        function renderPosts() {
+            var container = document.getElementById('posts-container');
+            container.innerHTML = '';
+            
+            var filteredPosts = [];
+            for(var i=0; i<allPosts.length; i++) {
+                var post = allPosts[i];
+                var isCategoryMatch = (currentCategory === '전체' || post.category === currentCategory);
+                
+                var isSearchMatch = true; 
+                if (currentSearchKeyword !== '') {
+                    var titleMatch = post.title.toLowerCase().indexOf(currentSearchKeyword) !== -1;
+                    var contentMatch = post.content.replace(/<[^>]*>?/gm, '').toLowerCase().indexOf(currentSearchKeyword) !== -1;
+                    isSearchMatch = (titleMatch || contentMatch);
+                }
+
+                if (isCategoryMatch && isSearchMatch) {
+                    filteredPosts.push(post);
+                }
+            }
+
+            document.getElementById('post-count').innerText = filteredPosts.length;
+
+            if (filteredPosts.length === 0) {
+                container.innerHTML = '<div class="text-center py-20 bg-white rounded-xl border border-gray-100"><i class="fa-solid fa-magnifying-glass text-5xl text-gray-200 mb-4"></i><p class="text-gray-500 font-bold">조건에 맞는 기록이 존재하지 않습니다.</p></div>';
+                return;
+            }
+
+            for(var j=0; j<filteredPosts.length; j++) {
+                var data = filteredPosts[j];
+                var rawText = data.content.replace(/<[^>]*>?/gm, ''); 
+                container.innerHTML += '<article class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-[#2f855a] transition cursor-pointer group" onclick="viewPost(\'' + data.id + '\')"><div class="flex items-center gap-3 mb-3"><span class="bg-[#2d3436] text-white text-xs px-3 py-1 rounded font-bold tracking-wider">' + data.category + '</span><time class="text-sm font-bold text-[#2f855a]"><i class="fa-regular fa-calendar-days mr-1"></i>' + data.date + '</time></div><h3 class="text-2xl font-serif font-extrabold mb-3 text-[#2d3436] group-hover:text-[#2f855a] transition">' + data.title + '</h3><p class="text-gray-500 line-clamp-2 text-sm leading-relaxed">' + rawText + '</p></article>';
+            }
+        }
+
+        function searchPosts() {
+            currentSearchKeyword = document.getElementById('search-input').value.toLowerCase();
+            showSection('home'); 
+        }
+
+        function viewPost(postId) {
+            var post = null;
+            for(var i=0; i<allPosts.length; i++) {
+                if(allPosts[i].id === postId) {
+                    post = allPosts[i];
+                    break;
+                }
+            }
+            if(post) {
+                currentViewingPostId = postId;
+                document.getElementById('detail-title').innerText = post.title;
+                document.getElementById('detail-date').innerText = post.date;
+                document.getElementById('detail-category').innerText = post.category;
+                document.getElementById('detail-content').innerHTML = post.content;
+                showSection('detail');
+                window.scrollTo(0, 0); 
+            }
+        }
+
+        function showSection(sectionName, isEditMode) {
+            var editMode = isEditMode || false;
+            
+            document.getElementById('home-section').classList.add('hidden');
+            document.getElementById('write-section').classList.add('hidden');
+            document.getElementById('detail-section').classList.add('hidden');
+            document.getElementById(sectionName + '-section').classList.remove('hidden');
+            
+            if(sectionName === 'home') {
+                currentViewingPostId = null;
+                currentEditingPostId = null;
+                renderPosts();
+            } else if(sectionName === 'write' && !editMode) {
+                document.getElementById('write-header-title').innerText = "새로운 사회 기록 작성";
+                document.getElementById('post-title').value = '';
+                quill.setContents([]); 
+                setTodayDate(); 
+            }
+        }
+
+        function filterCategory(category) {
+            currentCategory = category;
+            document.getElementById('category-title').innerText = category === '전체' ? '전체 기록' : category + ' 기록';
+            
+            document.getElementById('search-input').value = '';
+            currentSearchKeyword = '';
+
+            var btns = document.querySelectorAll('.cat-btn');
+            for(var i=0; i<btns.length; i++) {
+                if (btns[i].innerText.indexOf(category) !== -1) {
+                    btns[i].className = 'cat-btn w-full text-left px-3 py-2.5 rounded-lg bg-[#2f855a] text-white font-bold transition';
+                } else {
+                    btns[i].className = 'cat-btn w-full text-left px-3 py-2.5 rounded-lg hover:bg-gray-50 text-gray-700 transition';
+                }
+            }
+            showSection('home');
+        }
+
+        function openPasswordModal(action) {
+            pendingAction = action;
+            if(action === 'writeAccess') {
+                document.getElementById('password-desc').innerText = "기록실에 접근하려면 관리자 암호를 입력하세요.";
+            } else if(action === 'edit') {
+                document.getElementById('password-desc').innerText = "기록을 수정하려면 관리자 암호를 입력하세요.";
+            } else if(action === 'delete') {
+                document.getElementById('password-desc').innerText = "기록을 영구 삭제하려면 관리자 암호를 입력하세요.";
+            }
+            
+            document.getElementById('modal-pw').value = '';
+            document.getElementById('pw-error').classList.add('hidden');
+            document.getElementById('password-modal').classList.remove('hidden');
+            setTimeout(function() { document.getElementById('modal-pw').focus(); }, 100);
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+        }
+
+        function verifyPassword() {
+            var pw = document.getElementById('modal-pw').value;
+            if (pw === '1019393838') {
+                var actionToExecute = pendingAction; 
+                closePasswordModal();
+                pendingAction = null;
+                
+                if(actionToExecute === 'writeAccess') {
+                    currentEditingPostId = null; 
+                    showSection('write'); 
+                } else if(actionToExecute === 'edit') {
+                    prepareEditPost(); 
+                } else if(actionToExecute === 'delete') {
+                    executeDeletePost();
+                }
+            } else {
+                document.getElementById('pw-error').classList.remove('hidden');
+            }
+        }
+
+        function prepareEditPost() {
+            var post = null;
+            for(var i=0; i<allPosts.length; i++) {
+                if(allPosts[i].id === currentViewingPostId) {
+                    post = allPosts[i];
+                    break;
+                }
+            }
+            
+            if(post) {
+                currentEditingPostId = post.id;
+                document.getElementById('write-header-title').innerText = "사회 기록 수정"; 
+                document.getElementById('post-title').value = post.title;
+                document.getElementById('post-date').value = post.date;
+                document.getElementById('post-category').value = post.category;
+                quill.root.innerHTML = post.content;
+                showSection('write', true); 
+            }
+        }
+
+        function executeSavePost() {
+            if (!db) return showMessage("서버와 연결되지 않았습니다.");
+
+            var title = document.getElementById('post-title').value.trim();
+            var date = document.getElementById('post-date').value;
+            var category = document.getElementById('post-category').value;
+            var content = quill.root.innerHTML;
+            
+            if (!title || content === '<p><br></p>' || content.trim() === '') {
+                showMessage("제목과 내용을 모두 입력해 주세요!");
+                return;
+            }
+
+            var btn = document.getElementById('save-btn');
+            btn.innerText = "저장 중..."; btn.disabled = true;
+
+            if (currentEditingPostId) {
+                db.collection('mori_society_posts').doc(currentEditingPostId).update({
+                    title: title, date: date, category: category, content: content
+                }).then(function() {
+                    showMessage("🎉 기록이 성공적으로 수정되었습니다.");
+                    btn.innerText = "기록 보존하기"; btn.disabled = false;
+                    currentEditingPostId = null; 
+                    showSection('home');
+                    window.scrollTo(0, 0);
+                }).catch(function(error) {
+                    showMessage("수정 중 오류가 발생했습니다: " + error.message);
+                    btn.innerText = "기록 보존하기"; btn.disabled = false;
+                });
+            } else {
+                var id = Date.now().toString();
+                db.collection('mori_society_posts').doc(id).set({
+                    title: title, date: date, category: category, content: content, time: Date.now()
+                }).then(function() {
+                    showMessage("🎉 새로운 기록이 성공적으로 보존되었습니다.");
+                    btn.innerText = "기록 보존하기"; btn.disabled = false;
+                    showSection('home');
+                    window.scrollTo(0, 0);
+                }).catch(function(error) {
+                    showMessage("저장 중 오류가 발생했습니다: " + error.message);
+                    btn.innerText = "기록 보존하기"; btn.disabled = false;
+                });
+            }
+        }
+
+        function executeDeletePost() {
+            if(!currentViewingPostId) return;
+            db.collection('mori_society_posts').doc(currentViewingPostId).delete().then(function() {
+                showMessage("🗑️ 기록이 완전히 삭제되었습니다.");
+                showSection('home');
+            }).catch(function(error) {
+                showMessage("삭제 중 오류가 발생했습니다: " + error.message);
+            });
+        }
+    </script>
+</body>
+</html>
